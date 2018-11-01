@@ -8,23 +8,70 @@ Network providers are written for:
 
 - [cryptotoken-lib-python](#cryptotoken-lib-python)
 - [What Is it?](#what-is-it)
-    - [Discussion](#discussion)
-- [Data Structures](#data-structures)
+- [Using cryptotoken-lib](#using-cryptotoken-lib)
+    - [Ethereum](#ethereum)
+        - [Connecting to a particular Ethereum provider](#connecting-to-a-particular-ethereum-provider)
+            - [HTTP](#http)
+            - [Infura](#infura)
+- [Discussion](#discussion)
+- [Low-Level API](#low-level-api)
+- [Network Protocol Adapters](#network-protocol-adapters)
+    - [Ethereum json-rpc](#ethereum-json-rpc)
+- [TO REMOVE](#to-remove)
+- [Database Structs](#database-structs)
     - [Networks](#networks)
     - [Users](#users)
     - [UserAddresses](#useraddresses)
 - [High-Level API](#high-level-api)
-- [Low-Level API](#low-level-api)
-- [Network Protocol Adapters](#network-protocol-adapters)
-    - [Ethereum json-rpc](#ethereum-json-rpc)
 
 # What Is it?
-This library will provide an abstraction layer giving a general purpose interface on top of the major interactions with crypto-tokens across multiple cryptocurrency blockchains and networks.  The major operations required for a token are accounted for.  Initially, it will support ERC20 / [ERC223](https://github.com/Dexaran/ERC223-token-standard) standards, with emphasis on what will be required to support tokens across multiple blockchains.
+This library will provide an abstraction layer giving a general purpose interface on top of the major interactions with crypto-tokens across multiple cryptocurrency blockchains and networks.  The major operations required for a token are accounted for.  Initially, it will support ERC20 standard, with emphasis on what will be required to support tokens across multiple blockchains.
 
-In Ethereum, ERC223 defines the transfer function as:
+
+# Using cryptotoken-lib
+
+```python
+from cryptotoken-lib import *
+
+network = Ethereum.Network("127.0.0.1:8545")
+token = EthereumToken()
+token.send(to="0x98234f...", amount=Decimal(35.300))
+```
+
+## Ethereum
+In Ethereum, ERC20 defines the transfer function as:
 `transfer(address to, uint value, bytes data)`
 
-## Discussion
+
+### Connecting to a particular Ethereum provider
+
+#### HTTP
+You can set the environment variable WEB3_PROVIDER_URI before starting your script, and web3 will look for that provider first.
+
+```bash
+export WEB3_PROVIDER_URI=http://127.0.0.1:8545
+python my_program.py
+```
+
+Valid formats for the this environment variable are:
+
+file:///path/to/node/rpc-json/file.ipc
+http://192.168.1.2:8545
+https://node.ontheweb.com
+ws://127.0.0.1:8546
+
+
+#### Infura
+To connect to the Infura Mainnet remote node, first register for a free API key if you don’t have one at https://infura.io/signup .
+
+Then set the environment variable INFURA_API_KEY with your API key:
+
+```bash
+export INFURA_API_KEY=YourApiKey
+python my_program.py
+```
+
+# Discussion
 
 There are several intrinsic variables derived from making the call, including:
 * Source address / where to subtract the balances from. This is gleaned from the key used to sign the transaction.
@@ -32,15 +79,58 @@ There are several intrinsic variables derived from making the call, including:
 * Callback: This is specific to ERC223, and is encoded in the data parameter.
 
 
-# Data Structures
+
+
+
+
+# Low-Level API
+
+```python
+network = GetNetwork("Ethereum", "json-rpc", "192.168.67.124:8545")
+unsignedTx = network.buildTransfer({
+    'token': "0x9d36a...",
+    'sender': "0x145f...",
+    'recipient': "0x932ec2...",
+    'amount': 194850000000000000000000 # denominated in wei
+})
+
+signedTx = senderPrivateKey.sign(unsignedTx)
+network.broadcastRawTx(signedTx)
+
+```
+
+# Network Protocol Adapters
+## Ethereum json-rpc
+
+The library we use for interacting with Ethereum's RPC interface is called "web3".
+In order to interact with contract source code, you will need the solidity compiler
+Mac OS X:
+`brew install solidity`
+
+
+
+\
+\
+\
+\
+\
+&nbsp;
+
+
+
+
+
+# TO REMOVE
+# Database Structs
 ## Networks
 
-| Network  | Chain   | Protocol    | Network Address                 |
-| -------- | ------- | ----------- | ------------------------------- |
-| Ethereum | mainnet | json-rpc    | 192.168.67.124:8545             |
-| Ethereum | ropsten | json-rpc    | 192.168.67.124:8546             |
-| Ethereum | local   | json-rpc    | 127.0.0.1:8545                  |
-| Bitcoin  | Main    | blockcypher | api.blockcypher.com/v1/btc/main |
+| Blockchain | Provider    | Network | Protocol    | Address                         |
+| ---------- | ----------- | ------- | ----------- | ------------------------------- |
+| Ethereum   | personal    | mainnet | json-rpc    | 192.168.67.124:8545             |
+| Ethereum   | personal    | ropsten | json-rpc    | 192.168.67.124:8546             |
+| Ethereum   | personal    | local   | json-rpc    | 127.0.0.1:8545                  |
+| Ethereum   | Etherscan   | mainnet | etherscan   | https://api.etherscan.io        |
+| Bitcoin    | Blockcypher | mainnet | blockcypher | api.blockcypher.com/v1/btc/main |
 
 ## Users
 | id  | Name          |
@@ -69,24 +159,3 @@ nick = GetUserByName("Nick Sullivan")
 
 network.buildTransfer(token, duke, nick, "194.357") # Amount is a decimal-style representation in the precision defined in the smart contract.
 ```
-
-# Low-Level API
-This level of code is written with a minimum of suppositions.  Without the benefit of data structures and lookups, it operates at the lowest level of abstraction on top of the network protocol adapters themselves.
-
-```python
-network = GetNetwork("Ethereum", "json-rpc", "192.168.67.124:8545")
-unsignedTx = network.buildTransfer({
-    'token': "0x9d36a...",
-    'sender': "0x145f...",
-    'recipient': "0x932ec2...",
-    'amount': 194850000000000000000000 # denominated in wei
-})
-
-signedTx = senderPrivateKey.sign(unsignedTx)
-network.broadcastRawTx(signedTx)
-
-```
-
-# Network Protocol Adapters
-## Ethereum json-rpc
-This is the first adapter we will write.
